@@ -25,10 +25,10 @@ from agents.example import get_example_agent
 
 nest_asyncio.apply()
 st.set_page_config(
-    page_title="AI Agent",
+    page_title="Parkstreet AI",
     page_icon=":orange_heart:",
 )
-st.title("AI Agent")
+st.title("Parkstreet AI")
 st.markdown("##### :orange_heart: built using [phidata](https://github.com/phidatahq/phidata)")
 
 

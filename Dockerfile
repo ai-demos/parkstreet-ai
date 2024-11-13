@@ -14,8 +14,7 @@ WORKDIR ${APP_DIR}
 COPY requirements.txt ./
 
 # Install requirements
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv pip sync requirements.txt --system
+RUN uv pip sync requirements.txt --system
 
 # Copy project files
 COPY . .

@@ -16,7 +16,7 @@ dependencies = [
   "pgvector",
   "phidata[aws]==2.5.31",
   "pillow",
-  "psycopg",
+  "psycopg[binary]",
   "pypdf",
   "pytest",
   "python-docx",
