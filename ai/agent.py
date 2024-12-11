@@ -14,6 +14,8 @@ from utils.log import logger
 
 class Table(str, Enum):
     suppliers = "shipments"
+    orders = "orders"
+    financial_snapshots = "financial_snapshots"
 
 
 class SortOrder(str, Enum):
@@ -128,6 +130,195 @@ semantic_model = {
                 },
             },
         },
+        "orders": {
+            "description": "Tracks and manages data about Sales Orders and Transfer Orders, detailing their lifecycle and system information.",
+            "columns": {
+                "id": {
+                    "type": "integer",
+                    "null": False,
+                    "description": "Primary key, unique for each line item.",
+                },
+                "transaction_type": {
+                    "type": "string",
+                    "description": 'Defines order type ("Sales Order" or "Transfer Order").',
+                },
+                "po_number": {
+                    "type": "string",
+                    "description": "Purchase Order number for tracking.",
+                },
+                "client_id": {
+                    "type": "bigint",
+                    "description": "ID of the related client, based on the CRM classes table.",
+                },
+                "customer_id": {
+                    "type": "bigint",
+                    "description": "ID of the related customer, based on the CRM customers table.",
+                },
+                "so_number": {
+                    "type": "string",
+                    "description": "Sequential Sales Order number.",
+                },
+                "approval_status": {
+                    "type": "string",
+                    "description": "Indicates whether an order is approved.",
+                },
+                "so_status": {
+                    "type": "string",
+                    "description": "Current order status in the system (e.g., Fulfilled, Pending Receipt).",
+                },
+                "delivery_date": {
+                    "type": "datetime",
+                    "description": "Expected delivery date of the order.",
+                },
+                "special_instructions": {
+                    "type": "string",
+                    "description": "Special instructions for order handling.",
+                },
+                "posted_date": {
+                    "type": "datetime",
+                    "description": "Date and time when the order was created.",
+                },
+                "updated_at": {
+                    "type": "datetime",
+                    "description": "Last time the order record was updated.",
+                },
+                "delivery_start_datetime": {
+                    "type": "datetime",
+                    "description": "Start time for delivery.",
+                },
+                "delivery_end_datetime": {
+                    "type": "datetime",
+                    "description": "End time for delivery.",
+                },
+                "freight": {
+                    "type": "string",
+                    "description": "Shipping terms (e.g., Prepaid or Collect).",
+                },
+                "carrier": {
+                    "type": "string",
+                    "description": "Name of the carrier handling the order.",
+                },
+                "delivery_cost": {
+                    "type": "decimal",
+                    "description": "Cost of delivery.",
+                },
+                "fuel_surcharge": {
+                    "type": "decimal",
+                    "description": "Fuel surcharge applied to the delivery.",
+                },
+                "fb_status": {
+                    "type": "string",
+                    "description": "Legacy NetSuite integration order status.",
+                },
+                "sync_to_warehouse": {
+                    "type": "boolean",
+                    "description": "Indicates whether the order syncs to a warehouse.",
+                },
+                "credit_review_status": {
+                    "type": "string",
+                    "description": "Status of the credit review process.",
+                },
+                "credit_review_score": {
+                    "type": "integer",
+                    "description": "Credit review score for the order.",
+                },
+                "order_group_id": {
+                    "type": "integer",
+                    "description": "Groups chained orders together.",
+                },
+                "order_sequence": {
+                    "type": "integer",
+                    "description": "Sequence order for chained orders.",
+                },
+            },
+        },
+        "financial_snapshots": {
+            "description": "Analyzes financial snapshots for clients, tracking cash balances, accounts receivable/payable, inventory levels, and credit risk to understand their financial health and operational status over time.",
+            "columns": {
+                "id": {
+                    "type": "integer",
+                    "null": False,
+                    "description": "Primary key, unique for each snapshot entry.",
+                },
+                "client_id": {
+                    "type": "bigint",
+                    "null": False,
+                    "description": "Unique identifier for the client.",
+                },
+                "accounts_receivable": {
+                    "type": "decimal",
+                    "description": "Total amount of money owed to the client by their customers.",
+                },
+                "accounts_payable": {
+                    "type": "decimal",
+                    "description": "Total amount of money the client owes to their suppliers.",
+                },
+                "cash_balance": {
+                    "type": "decimal",
+                    "description": "Current cash balance of the client.",
+                },
+                "net_inventory_value": {
+                    "type": "decimal",
+                    "description": "Value of the client's inventory, net of costs and depreciation.",
+                },
+                "total_net_assets": {
+                    "type": "decimal",
+                    "description": "Total value of the client's net assets.",
+                },
+                "last_month_sales": {
+                    "type": "decimal",
+                    "description": "Sales made by the client in the last month.",
+                },
+                "last_month_deposits": {
+                    "type": "decimal",
+                    "description": "Total deposits made by the client in the last month.",
+                },
+                "available_inventory_qty": {
+                    "type": "integer",
+                    "description": "Quantity of inventory available for sale.",
+                },
+                "inventory_on_water": {
+                    "type": "integer",
+                    "description": "Inventory currently in transit or on order.",
+                },
+                "last_updated": {
+                    "type": "datetime",
+                    "description": "Date and time when the snapshot was last updated.",
+                },
+                "last_deposit_date": {
+                    "type": "datetime",
+                    "description": "Date of the most recent deposit.",
+                },
+                "credit_risk": {
+                    "type": "string",
+                    "description": "Credit risk level assigned to the client.",
+                },
+                "credit_risk_last_change": {
+                    "type": "datetime",
+                    "description": "Date when the credit risk status was last changed.",
+                },
+                "cash_balance_notification": {
+                    "type": "boolean",
+                    "description": "Indicates whether notifications are enabled for cash balance thresholds.",
+                },
+                "credit_risk_notification": {
+                    "type": "boolean",
+                    "description": "Indicates whether notifications are enabled for credit risk changes.",
+                },
+                "status_id": {
+                    "type": "integer",
+                    "description": "Identifier for the current status of the client or snapshot.",
+                },
+                "client_type": {
+                    "type": "tinyint",
+                    "description": "Type of client, categorized by an integer value.",
+                },
+                "relation_manager_id": {
+                    "type": "bigint",
+                    "description": "Identifier for the relationship manager assigned to the client.",
+                },
+            },
+        },
     },
 }
 
@@ -173,7 +364,7 @@ def format_order_by_column(order_by: OrderByColumn) -> str:
 
 
 def get_sql_agent(
-    team_id: str,
+    team_id: Optional[str] = None,
     run_id: Optional[str] = None,
     user_id: Optional[str] = None,
     debug_mode: bool = True,
@@ -197,6 +388,7 @@ def get_sql_agent(
         "   - Carefully specify date conditions and status filters in the WHERE clause.",
         "   - Double-check the logic to prevent unintended inclusions.",
         "   - Always make sure the columns you are querying are available in the table you are querying by referring to the semantic model.",
+        "   - Only include the columns in the SQL query which are available to you in the semantic model. Do not make up columns names as that would result in an error.",
         "",
     ]
 
@@ -228,7 +420,7 @@ Here are the tables available:
 
 
 def get_analytics_agent(
-    team_id: str,
+    team_id: Optional[str] = None,
     run_id: Optional[str] = None,
     user_id: Optional[str] = None,
     debug_mode: bool = True,
@@ -251,7 +443,7 @@ def get_analytics_agent(
         logger.info(f"Expected Answer: {expected_answer}")
 
         try:
-            sql_agent: Agent = get_sql_agent(team_id, run_id, user_id, debug_mode)
+            sql_agent: Agent = get_sql_agent(run_id=run_id, user_id=user_id, debug_mode=debug_mode)
 
             result = None
             previous_query = None
@@ -297,10 +489,10 @@ def get_analytics_agent(
                 if sql_query.conditions:
                     formatted_conditions = [format_condition(condition) for condition in sql_query.conditions]
                     query += f" WHERE {' AND '.join(formatted_conditions)}"
-                    query += f" AND organization_id = {team_id}"
+                    # query += f" AND organization_id = {team_id}"
 
-                else:
-                    query += f" WHERE organization_id = {team_id}"
+                # else:
+                # query += f" WHERE organization_id = {team_id}"
 
                 if sql_query.group_by_columns:
                     formatted_group_by_columns = [
@@ -340,19 +532,18 @@ def get_analytics_agent(
 
     instructions: List[str] = [
         "First **think** about the users question and categorize the question into:\n"
-        + "  - General Parkstreet question: Questions about using the Parkstreet platform\n"
         + "  - Sql Question: Questions that can be answered using a SQL query",
-        "If the users question is not related to Parkstreet or procurement information, politely redirect the user back to their Parkstreet account and do not answer the question.",
+        "If the users question is not related to Parkstreet, politely redirect the user back to their Parkstreet account and do not answer the question.",
         "If you have all the information you need to answer the users question, provide the answer.",
         "Otherwise answer each category of question using:\n"
-        + "  - General Parkstreet related question: Call the `search_knowledge_base` function and answer using the response.\n"
         + "  - Sql Question: call the `get_answer_using_sql` function and answer using the response. Make sure to clearly explain the question and the expected answer.",
         "Guidelines:\n"
         + "  - Do not mention that you are using SQL or your knowledge base to answer the question, just say you are retrieving the necessary information.",
+        "  - get_answer_using_sql will return a SQL query, just return query to the user. Do not make up results. Simply return the query to the user.",
     ]
 
     analytics_agent = Agent(
-        name=f"AnalyticsAIv2_{team_id}" if team_id else "AnalyticsAI",
+        name=f"ParkstreetAI_{team_id}" if team_id else "ParkstreetAI",
         run_id=run_id,
         user_id=user_id,
         model=OpenAIChat(

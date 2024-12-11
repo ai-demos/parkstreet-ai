@@ -27,12 +27,10 @@ def main() -> None:
             and st.session_state["parkstreet_ai_session_id"] is not None
         ):
             logger.info("---*--- Reading Analytics Agent ---*---")
-            parkstreet_ai = get_analytics_agent(
-                team_id="2", run_id=st.session_state["parkstreet_ai_session_id"]
-            )
+            parkstreet_ai = get_analytics_agent(run_id=st.session_state["parkstreet_ai_session_id"])
         else:
             logger.info("---*--- Creating new Analytics Agent ---*---")
-            parkstreet_ai = get_analytics_agent(team_id="2")
+            parkstreet_ai = get_analytics_agent()
         st.session_state["parkstreet_ai"] = parkstreet_ai
     else:
         parkstreet_ai = st.session_state["parkstreet_ai"]
@@ -94,7 +92,6 @@ def main() -> None:
         if st.session_state["parkstreet_ai_session_id"] != new_analytics_assistant_run_id:
             logger.info(f"Loading run {new_analytics_assistant_run_id}")
             st.session_state["parkstreet_ai"] = get_analytics_agent(
-                team_id="2",
                 run_id=new_analytics_assistant_run_id,
                 debug_mode=True,
             )
