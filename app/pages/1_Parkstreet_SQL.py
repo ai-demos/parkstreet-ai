@@ -7,12 +7,12 @@ from phi.utils.log import logger
 from ai.agent import get_analytics_agent
 
 st.set_page_config(
-    page_title="Parkstreet AI!",
+    page_title="Parkstreet SQL",
     page_icon=":rocket:",
 )
 
-st.title("Parkstreet AI!")
-st.markdown("##### :peanuts: built using [phidata](https://github.com/phidatahq/phidata)")
+st.title("Parkstreet SQL")
+st.markdown("##### :orange_heart: built using [phidata](https://github.com/phidatahq/phidata)")
 
 with st.expander(":rainbow[:point_down: Example Questions]"):
     st.markdown("- Show me the shipments departing in the next 30 days?")
