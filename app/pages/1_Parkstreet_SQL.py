@@ -16,6 +16,7 @@ st.markdown("##### :orange_heart: built using [phidata](https://github.com/phida
 
 with st.expander(":rainbow[:point_down: Example Questions]"):
     st.markdown("- Show me some client ids and their cash balances")
+    st.markdown("- Show me PO numbers with Approved approval status")
 
 
 def main() -> None:
