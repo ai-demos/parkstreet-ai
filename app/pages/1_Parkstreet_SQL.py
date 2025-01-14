@@ -15,7 +15,7 @@ st.title("Parkstreet SQL")
 st.markdown("##### :orange_heart: built using [phidata](https://github.com/phidatahq/phidata)")
 
 with st.expander(":rainbow[:point_down: Example Questions]"):
-    st.markdown("- Show me the shipments departing in the next 30 days?")
+    st.markdown("- Show me some client ids and their cash balances")
 
 
 def main() -> None:

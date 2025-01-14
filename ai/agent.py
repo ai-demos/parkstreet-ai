@@ -128,6 +128,10 @@ semantic_model = {
                     "null": False,
                     "description": "Timestamp when the shipment record was last updated",
                 },
+                "supplier": {
+                    "type": "string",
+                    "description": "Supplier of the goods in the shipment",
+                },
             },
         },
         "orders": {
@@ -322,6 +326,7 @@ semantic_model = {
     },
 }
 
+
 def run_query(query: str) -> str:
     """
     Runs a SQL query and returns the result.
@@ -336,14 +341,17 @@ def run_query(query: str) -> str:
     from db.session import db_url
     from sqlalchemy import create_engine, text
 
-    print(db_url)
-
     engine = create_engine(db_url)
 
-    with engine.connect() as connection:
-        result = connection.execute(text(query)).fetchall()
+    try:
+        with engine.connect() as connection:
+            result = connection.execute(text(query)).fetchall()
 
-    return f"Result: {result}"
+        return f"Result: {result} obtained from the query: {query}"
+
+    except Exception as e:
+        return f"Error: {e} occurred while running the query: {query}"
+
 
 def format_condition(condition: Condition) -> str:
     """
@@ -533,7 +541,6 @@ def get_analytics_agent(
                 query += f" LIMIT {query_limit}"
 
                 try:
-                    # result = run_query(query)
                     result = run_query(query)
                 except Exception as e:
                     logger.error(f"Error running query: {e}")
