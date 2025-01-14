@@ -13,7 +13,7 @@ from utils.log import logger
 
 
 class Table(str, Enum):
-    suppliers = "shipments"
+    shipments = "shipments"
     orders = "orders"
     financial_snapshots = "financial_snapshots"
 
@@ -322,6 +322,28 @@ semantic_model = {
     },
 }
 
+def run_query(query: str) -> str:
+    """
+    Runs a SQL query and returns the result.
+
+    Args:
+        query (str): The SQL query to run.
+
+    Returns:
+        str: The result of the SQL query.
+    """
+
+    from db.session import db_url
+    from sqlalchemy import create_engine, text
+
+    print(db_url)
+
+    engine = create_engine(db_url)
+
+    with engine.connect() as connection:
+        result = connection.execute(text(query)).fetchall()
+
+    return f"Result: {result}"
 
 def format_condition(condition: Condition) -> str:
     """
@@ -512,7 +534,7 @@ def get_analytics_agent(
 
                 try:
                     # result = run_query(query)
-                    result = query
+                    result = run_query(query)
                 except Exception as e:
                     logger.error(f"Error running query: {e}")
                     error_message = None
@@ -531,15 +553,14 @@ def get_analytics_agent(
             return "Error executing query. Please try again later."
 
     instructions: List[str] = [
-        "First **think** about the users question and categorize the question into:\n"
-        + "  - Sql Question: Questions that can be answered using a SQL query",
-        "If the users question is not related to Parkstreet, politely redirect the user back to their Parkstreet account and do not answer the question.",
-        "If you have all the information you need to answer the users question, provide the answer.",
-        "Otherwise answer each category of question using:\n"
-        + "  - Sql Question: call the `get_answer_using_sql` function and answer using the response. Make sure to clearly explain the question and the expected answer.",
-        "Guidelines:\n"
-        + "  - Do not mention that you are using SQL or your knowledge base to answer the question, just say you are retrieving the necessary information.",
-        "  - get_answer_using_sql will return a SQL query, just return query to the user. Do not make up results. Simply return the query to the user.",
+        "Your task is to answer the users questions by making a tool call to the `get_answer_using_sql` function.",
+        "If the user asks a specific question, make the tool call with the question and the expected answer.",
+        # "If the users question is not related to Parkstreet, politely redirect the user back to their Parkstreet account and do not answer the question.",
+        # "If you have all the information you need to answer the users question, provide the answer.",
+        # "Otherwise answer each category of question using:\n"
+        "  - Sql Question: call the `get_answer_using_sql` function and answer using the response. Make sure to clearly explain the question and the expected answer.",
+        "Guidelines:\n",
+        "  - Do not mention that you are using SQL or your knowledge base to answer the question, just say you are retrieving the necessary information.",
     ]
 
     analytics_agent = Agent(
