@@ -588,5 +588,7 @@ def get_analytics_agent(
         instructions=instructions,
         user_data={"team_id": team_id},
         tools=[get_answer_using_sql],
+        add_chat_history_to_messages=True,
+        num_history_responses=2,
     )
     return analytics_agent
