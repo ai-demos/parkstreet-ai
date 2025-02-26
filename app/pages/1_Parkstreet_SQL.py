@@ -2,8 +2,8 @@ from typing import List
 import streamlit as st
 
 
-from phi.agent import Agent
-from phi.utils.log import logger
+from agno.agent import Agent
+from agno.utils.log import logger
 from ai.agent import get_analytics_agent
 
 st.set_page_config(
@@ -12,7 +12,7 @@ st.set_page_config(
 )
 
 st.title("Parkstreet SQL")
-st.markdown("##### :orange_heart: built using [phidata](https://github.com/phidatahq/phidata)")
+st.markdown("##### :orange_heart: built using [Agno](https://github.com/agno-agi/agno)")
 
 with st.expander(":rainbow[:point_down: Example Questions]"):
     st.markdown("- Show me some client ids and their cash balances")
@@ -28,7 +28,7 @@ def main() -> None:
             and st.session_state["parkstreet_ai_session_id"] is not None
         ):
             logger.info("---*--- Reading Analytics Agent ---*---")
-            parkstreet_ai = get_analytics_agent(run_id=st.session_state["parkstreet_ai_session_id"])
+            parkstreet_ai = get_analytics_agent(session_id=st.session_state["parkstreet_ai_session_id"])
         else:
             logger.info("---*--- Creating new Analytics Agent ---*---")
             parkstreet_ai = get_analytics_agent()
@@ -36,14 +36,16 @@ def main() -> None:
     else:
         parkstreet_ai = st.session_state["parkstreet_ai"]
 
-    # Create Agent run (i.e. log to database) and save run_id in session state
-    st.session_state["parkstreet_ai_session_id"] = parkstreet_ai.create_session()
+    # Create Agent run (i.e. log to database) and save session_id in session state
+    logger.info(f"Session ID: {parkstreet_ai.get_agent_session()}")
+    st.session_state["parkstreet_ai_session_id"] = parkstreet_ai.get_agent_session()
 
     # Load existing messages
-    agent_chat_history = parkstreet_ai.memory.get_messages()
-    if len(agent_chat_history) > 0:
-        logger.debug("Loading chat history")
-        st.session_state["messages"] = agent_chat_history
+    if parkstreet_ai.memory:
+        agent_chat_history = parkstreet_ai.memory.get_messages()
+        if len(agent_chat_history) > 0:
+            logger.debug("Loading chat history")
+            st.session_state["messages"] = agent_chat_history
     else:
         logger.debug("No chat history found")
         st.session_state["messages"] = [{"role": "assistant", "content": "Ask me anything about Parkstreet"}]
@@ -86,22 +88,22 @@ def main() -> None:
     if st.sidebar.button("Auto Rename Session"):
         parkstreet_ai.auto_rename_session()
     if parkstreet_ai.storage:
-        analytics_assistant_run_ids: List[str] = parkstreet_ai.storage.get_all_session_ids()
-        new_analytics_assistant_run_id = st.sidebar.selectbox(
-            "Session ID", options=analytics_assistant_run_ids
+        analytics_assistant_session_ids: List[str] = parkstreet_ai.storage.get_all_session_ids()
+        logger.info(f"Session IDs: {analytics_assistant_session_ids}")
+        new_analytics_assistant_session_id = st.sidebar.selectbox(
+            "Session ID", options=analytics_assistant_session_ids
         )
-        if st.session_state["parkstreet_ai_session_id"] != new_analytics_assistant_run_id:
-            logger.info(f"Loading run {new_analytics_assistant_run_id}")
+        if st.session_state["parkstreet_ai_session_id"] != new_analytics_assistant_session_id:
+            logger.info(f"Loading Session {new_analytics_assistant_session_id}")
             st.session_state["parkstreet_ai"] = get_analytics_agent(
-                run_id=new_analytics_assistant_run_id,
+                session_id=new_analytics_assistant_session_id,
                 debug_mode=True,
             )
+            st.session_state["parkstreet_ai_session_id"] = new_analytics_assistant_session_id
             st.rerun()
     analytics_agent_run_name = parkstreet_ai.session_name
     if analytics_agent_run_name:
         st.sidebar.write(f":thread: {analytics_agent_run_name}")
-    # if st.sidebar.button("Load knowledge base"):
-    #     load_analytics_ai_knowledge_base()
 
 
 def restart_agent():

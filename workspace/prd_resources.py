@@ -1,41 +1,49 @@
-from os import getenv
+from agno.aws.app.fastapi import FastApi
+from agno.aws.app.streamlit import Streamlit
+from agno.aws.resources import AwsResources
+from agno.aws.resource.ecs import EcsCluster
+from agno.aws.resource.ec2 import SecurityGroup, InboundRule
+from agno.aws.resource.rds import DbInstance, DbSubnetGroup
+from agno.aws.resource.reference import AwsReference
+from agno.aws.resource.s3 import S3Bucket
+from agno.aws.resource.secret import SecretsManager
+from agno.docker.resources import DockerResources
+from agno.docker.resource.image import DockerImage
 
-from phi.aws.app.fastapi import FastApi
-from phi.aws.app.streamlit import Streamlit
-from phi.aws.resources import AwsResources
-from phi.aws.resource.ecs import EcsCluster
-from phi.aws.resource.ec2 import SecurityGroup, InboundRule
-from phi.aws.resource.rds import DbInstance, DbSubnetGroup
-from phi.aws.resource.reference import AwsReference
-from phi.aws.resource.s3 import S3Bucket
-from phi.aws.resource.secret import SecretsManager
-from phi.docker.resources import DockerResources
-from phi.docker.resource.image import DockerImage
-
-from workspace.settings import ws_settings
+from workspace.settings import (
+    BUILD_IMAGES,
+    IMAGE_REPO,
+    PRD_ENV,
+    PRD_KEY,
+    WS_NAME,
+    WS_ROOT,
+    SUBNET_IDS,
+    AWS_AZ1,
+    AWS_REGION,
+    AWS_PROFILE,
+)
 
 #
-# -*- Resources for the Production Environment
+# -*- AWS resources for the production environment
 #
-# Skip resource deletion when running `phi ws down` (set to True after initial deployment)
+# Skip resource deletion when running `agno ws down`
 skip_delete: bool = False
 # Save resource outputs to workspace/outputs
 save_output: bool = True
-app_or_api_enabled = ws_settings.prd_api_enabled or ws_settings.prd_app_enabled
 
 # -*- Production image
 prd_image = DockerImage(
-    name=f"{ws_settings.image_repo}/{ws_settings.image_name}",
-    tag=ws_settings.prd_env,
-    enabled=ws_settings.build_images,
-    path=str(ws_settings.ws_root),
+    name=f"{IMAGE_REPO}/{WS_NAME}",
+    tag=PRD_ENV,
+    enabled=BUILD_IMAGES,
+    path=str(WS_ROOT),
     platforms=["linux/amd64", "linux/arm64"],
     push_image=True,
 )
 
 # -*- S3 bucket for production data (set enabled=True when needed)
 prd_bucket = S3Bucket(
-    name=f"{ws_settings.prd_key}-data",
+    name=f"{PRD_KEY}-data",
     enabled=False,
     acl="private",
     skip_delete=skip_delete,
@@ -44,30 +52,27 @@ prd_bucket = S3Bucket(
 
 # -*- Secrets for production application
 prd_secret = SecretsManager(
-    name=f"{ws_settings.prd_key}-app-secret",
-    enabled=app_or_api_enabled,
-    group="app",
-    # Create secret from workspace/secrets/prd_app_secrets.yml
-    secret_files=[ws_settings.ws_root.joinpath("workspace/secrets/prd_app_secrets.yml")],
+    name=f"{PRD_KEY}-secret",
+    group="api",
+    # Create secret from workspace/secrets/prd_api_secrets.yml
+    secret_files=[WS_ROOT.joinpath("workspace/secrets/prd_api_secrets.yml")],
     skip_delete=skip_delete,
     save_output=save_output,
 )
 # -*- Secrets for production database
 prd_db_secret = SecretsManager(
-    name=f"{ws_settings.prd_key}-db-secret",
-    enabled=ws_settings.prd_db_enabled,
+    name=f"{PRD_KEY}-db-secret",
     group="db",
     # Create secret from workspace/secrets/prd_db_secrets.yml
-    secret_files=[ws_settings.ws_root.joinpath("workspace/secrets/prd_db_secrets.yml")],
+    secret_files=[WS_ROOT.joinpath("workspace/secrets/prd_db_secrets.yml")],
     skip_delete=skip_delete,
     save_output=save_output,
 )
 
 # -*- Security Group for the load balancer
 prd_lb_sg = SecurityGroup(
-    name=f"{ws_settings.prd_key}-lb-sg",
-    enabled=app_or_api_enabled,
-    group="app",
+    name=f"{PRD_KEY}-lb-security-group",
+    group="api",
     description="Security group for the load balancer",
     inbound_rules=[
         InboundRule(
@@ -86,10 +91,10 @@ prd_lb_sg = SecurityGroup(
 )
 # -*- Security Group for the application
 prd_sg = SecurityGroup(
-    name=f"{ws_settings.prd_key}-app-sg",
-    enabled=app_or_api_enabled,
-    group="app",
-    description="Security group for the production application",
+    name=f"{PRD_KEY}-security-group",
+    enabled=True,
+    group="api",
+    description="Security group for the production api",
     inbound_rules=[
         InboundRule(
             description="Allow traffic from LB to the FastAPI server",
@@ -97,9 +102,9 @@ prd_sg = SecurityGroup(
             security_group_id=AwsReference(prd_lb_sg.get_security_group_id),
         ),
         InboundRule(
-            description="Allow traffic from LB to the Streamlit app",
+            description="Allow traffic from the internet to the Streamlit app",
             port=8501,
-            security_group_id=AwsReference(prd_lb_sg.get_security_group_id),
+            cidr_ip="0.0.0.0/0",
         ),
     ],
     depends_on=[prd_lb_sg],
@@ -109,13 +114,13 @@ prd_sg = SecurityGroup(
 # -*- Security Group for the database
 prd_db_port = 5432
 prd_db_sg = SecurityGroup(
-    name=f"{ws_settings.prd_key}-db-sg",
-    enabled=ws_settings.prd_db_enabled,
+    name=f"{PRD_KEY}-db-security-group",
+    enabled=True,
     group="db",
     description="Security group for the production database",
     inbound_rules=[
         InboundRule(
-            description="Allow traffic from apps to the database",
+            description="Allow traffic from the FastAPI server to the database",
             port=prd_db_port,
             security_group_id=AwsReference(prd_sg.get_security_group_id),
         ),
@@ -124,33 +129,30 @@ prd_db_sg = SecurityGroup(
     skip_delete=skip_delete,
     save_output=save_output,
 )
-
 # -*- RDS Database Subnet Group
 prd_db_subnet_group = DbSubnetGroup(
-    name=f"{ws_settings.prd_key}-db-sg",
-    enabled=ws_settings.prd_db_enabled,
+    name=f"{PRD_KEY}-db-sg",
+    enabled=True,
     group="db",
-    subnet_ids=ws_settings.subnet_ids,
+    subnet_ids=SUBNET_IDS,
     skip_delete=skip_delete,
     save_output=save_output,
 )
 
 # -*- RDS Database Instance
 prd_db = DbInstance(
-    name=f"{ws_settings.prd_key}-db",
-    enabled=ws_settings.prd_db_enabled,
+    name=f"{PRD_KEY}-db",
+    enabled=True,
     group="db",
-    db_name="ai",
+    db_name="api",
     port=prd_db_port,
     engine="postgres",
-    engine_version="16.4",
+    engine_version="17.2",
     allocated_storage=64,
-    # NOTE: For production, use a larger instance type.
-    # Last checked price: ~$25 per month
-    db_instance_class="db.t4g.small",
+    db_instance_class="db.r6g.large",
     db_security_groups=[prd_db_sg],
     db_subnet_group=prd_db_subnet_group,
-    availability_zone=ws_settings.aws_az1,
+    availability_zone=AWS_AZ1,
     publicly_accessible=False,
     enable_performance_insights=True,
     aws_secret=prd_db_secret,
@@ -161,10 +163,11 @@ prd_db = DbInstance(
 )
 
 # -*- ECS cluster
+launch_type = "FARGATE"
 prd_ecs_cluster = EcsCluster(
-    name=f"{ws_settings.prd_key}-cluster",
-    ecs_cluster_name=ws_settings.prd_key,
-    capacity_providers=["FARGATE"],
+    name=f"{PRD_KEY}-cluster",
+    ecs_cluster_name=WS_NAME,
+    capacity_providers=[launch_type],
     skip_delete=skip_delete,
     save_output=save_output,
 )
@@ -172,10 +175,7 @@ prd_ecs_cluster = EcsCluster(
 # -*- Build container environment
 container_env = {
     "RUNTIME_ENV": "prd",
-    # Get the OpenAI API key from the local environment
-    "OPENAI_API_KEY": getenv("OPENAI_API_KEY"),
     "PHI_MONITORING": "True",
-    "PHI_API_KEY": getenv("PHI_API_KEY"),
     # Database configuration
     "DB_HOST": AwsReference(prd_db.get_db_endpoint),
     "DB_PORT": AwsReference(prd_db.get_db_port),
@@ -183,15 +183,15 @@ container_env = {
     "DB_PASS": AwsReference(prd_db.get_master_user_password),
     "DB_DATABASE": AwsReference(prd_db.get_db_name),
     # Wait for database to be available before starting the application
-    "WAIT_FOR_DB": ws_settings.prd_db_enabled,
+    "WAIT_FOR_DB": True,
     # Migrate database on startup using alembic
     # "MIGRATE_DB": ws_settings.prd_db_enabled,
 }
 
 # -*- Streamlit running on ECS
 prd_streamlit = Streamlit(
-    name=f"{ws_settings.prd_key}-app",
-    enabled=ws_settings.prd_app_enabled,
+    name=f"{PRD_KEY}-app",
+    enabled=True,
     group="app",
     image=prd_image,
     command="streamlit run app/Home.py",
@@ -201,7 +201,7 @@ prd_streamlit = Streamlit(
     ecs_service_count=1,
     ecs_cluster=prd_ecs_cluster,
     aws_secrets=[prd_secret],
-    subnets=ws_settings.subnet_ids,
+    subnets=SUBNET_IDS,
     security_groups=[prd_sg],
     # To enable HTTPS, create an ACM certificate and add the ARN below:
     # load_balancer_enable_https=True,
@@ -209,7 +209,7 @@ prd_streamlit = Streamlit(
     load_balancer_security_groups=[prd_lb_sg],
     create_load_balancer=True,
     env_vars=container_env,
-    use_cache=ws_settings.use_cache,
+    use_cache=True,
     skip_delete=skip_delete,
     save_output=save_output,
     # Do not wait for the service to stabilize
@@ -220,27 +220,27 @@ prd_streamlit = Streamlit(
 
 # -*- FastApi running on ECS
 prd_fastapi = FastApi(
-    name=f"{ws_settings.prd_key}-api",
-    enabled=ws_settings.prd_api_enabled,
+    name=PRD_KEY,
+    enabled=True,
     group="api",
     image=prd_image,
-    command="uvicorn api.main:app --workers 2",
+    command="uvicorn api.main:app --workers 4",
     port_number=8000,
-    ecs_task_cpu="1024",
-    ecs_task_memory="2048",
-    ecs_service_count=1,
+    ecs_task_cpu="2048",
+    ecs_task_memory="4096",
+    ecs_service_count=2,
     ecs_cluster=prd_ecs_cluster,
     aws_secrets=[prd_secret],
-    subnets=ws_settings.subnet_ids,
+    subnets=SUBNET_IDS,
     security_groups=[prd_sg],
     # To enable HTTPS, create an ACM certificate and add the ARN below:
     # load_balancer_enable_https=True,
-    # load_balancer_certificate_arn="LOAD_BALANCER_CERTIFICATE_ARN",
+    # load_balancer_certificate_arn="arn:aws:acm:us-east-1:497891874516:certificate/e822946f-02c9-4ed1-8177-97ef2f4f5b72",
     load_balancer_security_groups=[prd_lb_sg],
     create_load_balancer=True,
     health_check_path="/v1/health",
     env_vars=container_env,
-    use_cache=ws_settings.use_cache,
+    use_cache=True,
     skip_delete=skip_delete,
     save_output=save_output,
     # Do not wait for the service to stabilize
@@ -251,14 +251,16 @@ prd_fastapi = FastApi(
 
 # -*- Production DockerResources
 prd_docker_resources = DockerResources(
-    env=ws_settings.prd_env,
-    network=ws_settings.ws_name,
+    env=PRD_ENV,
+    network=WS_NAME,
     resources=[prd_image],
 )
 
 # -*- Production AwsResources
 prd_aws_config = AwsResources(
-    env=ws_settings.prd_env,
+    env=PRD_ENV,
+    aws_region=AWS_REGION,
+    aws_profile=AWS_PROFILE,
     apps=[prd_streamlit, prd_fastapi],
     resources=(
         prd_lb_sg,

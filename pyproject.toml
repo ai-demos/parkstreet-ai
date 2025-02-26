@@ -6,6 +6,9 @@ readme = "README.md"
 authors = [{ name = "Phidata Team", email = "hello@phidata.com" }]
 
 dependencies = [
+  "agno==1.1.6",
+  "agno-docker==0.0.1",
+  "agno-aws==0.0.1",
   "alembic",
   "beautifulsoup4",
   "duckduckgo-search",

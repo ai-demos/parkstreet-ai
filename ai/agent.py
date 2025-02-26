@@ -3,8 +3,8 @@ from enum import Enum
 from textwrap import dedent
 from typing import Optional, List, Union
 
-from phi.agent import Agent, RunResponse
-from phi.model.openai import OpenAIChat
+from agno.agent import Agent, RunResponse
+from agno.models.openai import OpenAIChat
 from pydantic import BaseModel, Field
 
 from ai.storage import sql_agent_storage, analytics_ai_storage
@@ -395,7 +395,7 @@ def format_order_by_column(order_by: OrderByColumn) -> str:
 
 def get_sql_agent(
     team_id: Optional[str] = None,
-    run_id: Optional[str] = None,
+    session_id: Optional[str] = None,
     user_id: Optional[str] = None,
     debug_mode: bool = True,
 ) -> Agent:
@@ -425,7 +425,7 @@ def get_sql_agent(
     sql_agent = Agent(
         name="SQLAgent",
         description="You are a PostgreSQL Agent and your task is to answer questions using SQL queries.",
-        run_id=run_id,
+        session_id=session_id,
         user_id=user_id,
         model=OpenAIChat(
             id=agent_settings.gpt_4,
@@ -451,7 +451,7 @@ Here are the tables available:
 
 def get_analytics_agent(
     team_id: Optional[str] = None,
-    run_id: Optional[str] = None,
+    session_id: Optional[str] = None,
     user_id: Optional[str] = None,
     debug_mode: bool = True,
 ) -> Agent:
@@ -473,7 +473,7 @@ def get_analytics_agent(
         logger.info(f"Expected Answer: {expected_answer}")
 
         try:
-            sql_agent: Agent = get_sql_agent(run_id=run_id, user_id=user_id, debug_mode=debug_mode)
+            sql_agent: Agent = get_sql_agent(session_id=session_id, user_id=user_id, debug_mode=debug_mode)
 
             result = None
             previous_query = None
@@ -572,8 +572,8 @@ def get_analytics_agent(
 
     analytics_agent = Agent(
         name=f"ParkstreetAI_{team_id}" if team_id else "ParkstreetAI",
-        run_id=run_id,
         user_id=user_id,
+        session_id=session_id,
         model=OpenAIChat(
             id=agent_settings.gpt_4,
             max_tokens=agent_settings.default_max_completion_tokens,
@@ -586,9 +586,8 @@ def get_analytics_agent(
         read_chat_history=True,
         description="You are an AI Agent called Parkstreet-AI. You can answer questions related to analytics using SQL queries.",
         instructions=instructions,
-        user_data={"team_id": team_id},
         tools=[get_answer_using_sql],
-        add_chat_history_to_messages=True,
+        add_history_to_messages=True,
         num_history_responses=2,
     )
     return analytics_agent
