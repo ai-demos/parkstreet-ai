@@ -220,7 +220,7 @@ prd_streamlit = Streamlit(
 
 # -*- FastApi running on ECS
 prd_fastapi = FastApi(
-    name=PRD_KEY,
+    name=f"{PRD_KEY}-api",
     enabled=True,
     group="api",
     image=prd_image,
