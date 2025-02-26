@@ -441,10 +441,8 @@ Here are the tables available:
         response_model=SqlQuery,
         structured_outputs=True,
         storage=sql_agent_storage,
-        monitoring=True,
         debug_mode=debug_mode,
         instructions=instructions,
-        user_data={"team_id": team_id},
     )
     return sql_agent
 

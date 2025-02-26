@@ -22,6 +22,7 @@
 
 # ignore storage dir
 storage
+ai/data
 
 # ignore .local dir
 .local

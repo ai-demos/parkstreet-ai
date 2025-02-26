@@ -30,7 +30,7 @@ SUBNET_IDS = ["subnet-067b9140c018160f6", "subnet-0f3ba3094301af603"]
 
 # Image Settings
 # Repository for images
-IMAGE_REPO = "parkstreet-ai"
+IMAGE_REPO = "497891874516.dkr.ecr.us-east-1.amazonaws.com"
 
 # Build images locally
 BUILD_IMAGES = True
